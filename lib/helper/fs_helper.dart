@@ -1,46 +1,61 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class FsHelper {
-  FsHelper._();
-  static FsHelper fsHelper = FsHelper._();
+class FirestoreHelper {
+  FirestoreHelper._();
+  static final FirestoreHelper firestoreHelper = FirestoreHelper._();
+  static final FirebaseFirestore firebaseFirestore = FirebaseFirestore.instance;
+  late CollectionReference userRef;
+  late CollectionReference partyRef;
 
-  FirebaseFirestore firebaseFirestore = FirebaseFirestore.instance;
-
-  Future<void> addingmyData(
-      {required String VoterName, required Map<String, dynamic> myData}) async {
-    await firebaseFirestore
-        .collection("$VoterName")
-        .doc("${myData['id']}")
-        .set(myData);
+  //connectionWithCollection
+  void connectionWithUsersCollection() {
+    userRef = firebaseFirestore.collection('users');
   }
 
-  Stream<QuerySnapshot> attachmyData({required String VoterName}) {
-    return firebaseFirestore.collection(VoterName).snapshots();
+  void connectionWithPartyCollection() {
+    partyRef = firebaseFirestore.collection('parties');
   }
 
-  Future<void> NewlyRec(
-      {required String id,
-      required Map<String, dynamic> myData,
-      required String VoterName}) async {
-    await firebaseFirestore.collection(VoterName).doc(id).update(myData);
+  //insertRecord
+  Future<void> insertRecord({
+    required String id,
+    required String name,
+    required String email,
+    required int age,
+    required String password,
+  }) async {
+    connectionWithUsersCollection();
+
+    Map<String, dynamic> data = {
+      'name': name,
+      'email': email,
+      'age': age,
+      'password': password,
+      'hasVoted': false,
+    };
+
+    await userRef.doc(id).set(data);
   }
 
-  Future<void> RemoveRec(
-      {required String id,
-      required Map<String, dynamic> myData,
-      required String VoterName}) async {
-    await firebaseFirestore.collection(VoterName).doc(id).delete();
+  //updateRecord
+  updateRecord({required String id, required int totalVotes}) async {
+    connectionWithPartyCollection();
+    Map<String, dynamic> data = {'total_votes': totalVotes};
+    await partyRef.doc(id).update(data);
   }
 
-  Stream<QuerySnapshot> attachC() {
-    return firebaseFirestore.collection("partyName").snapshots();
+  updateUserRecord({required String id, required bool voteStatus}) async {
+    connectionWithUsersCollection();
+    Map<String, dynamic> data = {
+      'hasVoted': voteStatus,
+    };
+    await userRef.doc(id).update(data);
   }
 
-  Future<void> NewlyCT(
-      {required Map<String, dynamic> myData, required String VoterName}) async {
-    await firebaseFirestore
-        .collection("partyName")
-        .doc(VoterName)
-        .update(myData);
+  //fetchRecords
+  Stream<QuerySnapshot> fetchPartiesRecord() {
+    connectionWithPartyCollection();
+
+    return partyRef.snapshots();
   }
 }
